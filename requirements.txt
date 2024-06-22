@@ -1,0 +1,9 @@
+opencv-python
+numpy
+mtcnn
+keras-facenet
+scipy
+transformers
+sentence-transformers
+tensorflow_hub
+tensorflow

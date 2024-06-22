@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Socket.IO and Prediction Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+    <h1>Socket.IO and Prediction Test</h1>
+
+    <h2>Upload Video for Prediction</h2>
+    <form id="uploadForm">
+        <input type="file" id="videoFile" accept="video/*">
+        <button type="submit">Upload and Predict</button>
+    </form>
+
+    <h2>Real-time Video Frame Prediction</h2>
+    <video id="videoElement" width="640" height="480" autoplay></video>
+
+    <script>
+        const socket = io('http://localhost:5000');
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+        socket.emit('video_frame', { message: 'Hello from the client!' });
+
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
+
+        socket.on('prediction', (data) => {
+            console.log('Prediction:', data);
+        });
+
+        const uploadForm = document.getElementById('uploadForm');
+        const videoFileInput = document.getElementById('videoFile');
+
+        uploadForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const file = videoFileInput.files[0];
+            if (!file) {
+                alert('Please select a video file.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('http://localhost:5000/predict', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Prediction results:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+
+        const videoElement = document.getElementById('videoElement');
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    videoElement.srcObject = stream;
+                    const mediaStreamTrack = stream.getVideoTracks()[0];
+                    const imageCapture = new ImageCapture(mediaStreamTrack);
+                    let frameCount = 0;
+
+                    setInterval(() => {
+                        imageCapture.grabFrame()
+                            .then((imageBitmap) => {
+                                frameCount += 1;
+                                if (frameCount % 4 === 0) {
+                                    return createImageBitmap(imageBitmap, {
+                                        resizeWidth: 224,
+                                        resizeHeight: 224
+                                    });
+                                }
+                            })
+                            .then((resizedBitmap) => {
+                                if (resizedBitmap) {
+                                    const canvas = document.createElement('canvas');
+                                    canvas.width = resizedBitmap.width;
+                                    canvas.height = resizedBitmap.height;
+                                    const context = canvas.getContext('2d');
+                                    context.drawImage(resizedBitmap, 0, 0);
+                                    canvas.toBlob((blob) => {
+                                        const reader = new FileReader();
+                                        reader.onload = () => {
+                                            console.log("Sending frame...", { frame: arrayBuffer });
+                                            const arrayBuffer = reader.result;
+                                            socket.emit('video_frame', { frame: arrayBuffer });
+                                        };
+                                        reader.readAsArrayBuffer(blob);
+                                    }, 'image/jpeg');
+                                }
+                            })
+                            .catch((error) => {
+                                console.error('Error capturing frame:', error);
+                            });
+                    }, 250); // Capture frame every 250ms (about 4 frames per second)
+                })
+                .catch((error) => {
+                    console.error('Error accessing camera:', error);
+                });
+        }
+
+
+        setTimeout(() => {
+            startCamera();
+        }, 1000);
+    </script>
+</body>
+
+</html>
