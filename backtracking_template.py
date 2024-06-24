@@ -14,7 +14,7 @@ def solve():
             return
 
         for candidate in get_candidates(state):
-            state.add(candidate)
+            state.append(candidate)
             search(state)
             state.remove(candidate)
 
