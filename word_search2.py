@@ -3,6 +3,8 @@ class TrieNode:
         self.children = [None for _ in range(26)]
         self.wordEnd = isEnd
         self.char = char
+        self.number_of_words = 1
+        self.word = None
 
 
 class Trie:
@@ -13,12 +15,11 @@ class Trie:
         start = self.root
 
         def recurse_insert(i, start):
+            if i == len(word) and start.wordEnd:
+                start.number_of_words += 1
             if i == len(word):
-                if start.wordEnd:
-                    start.number_of_words += (
-                        1  # Increment word count if the word already exists
-                    )
-                start.wordEnd = True  # Ensure wordEnd is set when inserting a new word
+                start.wordEnd = True
+                start.word = word
                 return
             index = ord(word[i]) - ord("a")
             if start.children[index] != None:
@@ -33,7 +34,6 @@ class Trie:
         start = self.root
 
         def recurse_search(i, start):
-
             if i == len(word):
                 return start.wordEnd
             index = ord(word[i]) - ord("a")
@@ -66,6 +66,7 @@ class Trie:
 
 
 def exist(board, word):
+    res = set()
     trie = Trie()
     height = len(board)
     width = len(board[0])
@@ -74,6 +75,8 @@ def exist(board, word):
     letters = set()
     for w in word:
         letters.add(w[0])
+    for word in word:
+        trie.insert(word)
 
     def get_candidates(i, j, seen):
         neighbor = []
@@ -84,45 +87,33 @@ def exist(board, word):
                     neighbor.append(tuple([ni, nj]))
         return neighbor
 
-    def search(i, j, current):
-        found = False
-        # if current == len(word):
-        #     return True
+    def search(i, j, node):
+
+        if node.wordEnd:
+            res.add(node.word)
 
         for candidate in get_candidates(i, j, seen):
-
-            # if current > len(word) - 1:
-            #     return False
-            if board[candidate[0]][candidate[1]]:
-                state.append(board[candidate[0]][candidate[1]])
-                char = ""
-                for c in state:
-                    char += c
-                trie.insert(char)
+            char = board[candidate[0]][candidate[1]]
+            next_node = node.children[ord(char) - ord("a")]
+            if next_node:
                 seen.add((candidate[0], candidate[1]))
-                found = search(candidate[0], candidate[1], current + 1)
-                # if found:
-                #     return True
+                search(candidate[0], candidate[1], next_node)
                 seen.remove((candidate[0], candidate[1]))
-                state.pop()
-        return found
 
     for row in range(height):
         for col in range(width):
-            if board[row][col] in letters:
-                result = search(row, col, 0)
-                seen = set()
-                # if result:
-                #     return True
-                seen.clear()
-                state = []
-    ans = []
-    for word in word:
-        if trie.search(word):
-            ans.append(word)
-    return ans
+            char = board[row][col]
+            node = trie.root.children[ord(char) - ord("a")]
+            if node:
+                seen.add((row, col))
+                state.append(char)
+                search(row, col, node)
+                seen.remove((row, col))
+                state.pop()
+
+    return list(res)
 
 
-board = [["a", "a"]]
-word = "aa"
-print(exist(board, word))
+board = [["a", "b", "c", "e"], ["x", "x", "c", "d"], ["x", "x", "b", "a"]]
+words = ["abc", "abcd"]
+print(exist(board, words))

@@ -10,20 +10,17 @@ class Codec:
         self.password = ""
 
     def encode(self, strs) -> str:
-        key = set()
+        dic = {}
+        for word in strs:
+            word_dic = [0] * 26
+            for letter in word:
+                word_dic[ord(letter) - ord("a")] += 1
+            key = tuple(word_dic)
+        print(key)
+        for i, val in enumerate(key):
+            print(val)
 
-        for i in strs:
-            key.update(i)
-        a = ""
-        for t in key:
-            a += t
-        sort = "".join(sorted(a))
-
-        ret_string = ""
-        for i in strs:
-            i += sort
-            ret_string += i
-        return ret_string
+        return "ret_string"
 
     def decode(self, s: str):
 

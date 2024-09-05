@@ -1,37 +1,46 @@
-def process(wordDict):
-    dic=[]
-    for word in wordDict:
-        first=word[0]
-        last=word[len(word)-1]
-        dic.append([first,last,word])
-    return dic
+def partition(s, wordDict):
+    state = []
+    solution = []
+    dictionary = set(wordDict)
 
-def wordbreak(left,right,s,wordDict):
-    
-    processedDict=process(wordDict)
-    leftWord=None
-    rightWord=None 
+    memo1 = {}
 
-    if left-right>0:
-        return True
-    
-    if left>=right:
+    def get_candidates(current):
+        sub_index = []
+        for i in range(current, len(s)):
+            sub_index.append(i)
+        return sub_index
+
+    def check_palindrome(start, end):
+
+        if s[start : end + 1] in dictionary:
+            return True
         return False
-    else:
-        for word in processedDict:
-            print(word)
-            if s[left]==word[0]:
-                leftWord=word[2]
-                left+=1
-                break
-        for word in processedDict:
-            if s[right]==word[1]:
-                rightWord=word[2]
-                right-=1
-                break
-        return wordbreak(left,right,s,wordDict)
-    
-    
-    print(leftWord,rightWord)
 
-print(wordbreak(0,2,"abc",["a","bc"]))
+    def search(current):
+
+        if current in memo1:
+            return memo1[current]
+
+        nonlocal state
+
+        if current == len(s):
+            memo1[current] = True
+            return True
+
+        for candidate in get_candidates(current):
+            if check_palindrome(current, candidate):
+                state.append(s[current : candidate + 1])
+                temp = search(candidate + 1)
+                state.pop()
+                if temp == True:
+                    memo1[current] = temp
+                    return temp
+
+        memo1[current] = False
+        return False
+
+    return search(0)
+
+
+print(partition("aaaaaaa", ["aaaa", "aaa"]))

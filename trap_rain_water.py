@@ -10,7 +10,6 @@ def trap(height):
         if leftMax < rightMax:
             trapped = leftMax - height[leftPointer]
             leftPointer += 1
-
         else:
             trapped = rightMax - height[rightPointer]
             rightPointer -= 1
